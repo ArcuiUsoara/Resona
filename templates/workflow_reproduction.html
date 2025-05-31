@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Reproduction Workflow - Resona Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* ShadCN-inspired styles */
+        :root {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 224.3 76.3% 48%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .card {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .input {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .textarea {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            min-height: 100px;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .select {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-label:hover {
+            opacity: 0.9;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background-color: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-circle.active {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-circle.completed {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background-color: hsl(var(--muted));
+            margin: 0 0.5rem;
+        }
+
+        .step-line.completed {
+            background-color: hsl(var(--primary));
+        }
+
+        .step-text {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            text-align: center;
+        }
+
+        .step-text.active {
+            color: hsl(var(--foreground));
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="py-6 px-4 sm:px-6 lg:px-8 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{{ url_for('index') }}" class="text-2xl font-bold text-white">Resona Model</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-white">Voice Reproduction Workflow</h2>
+                <p class="mt-2 text-gray-400">
+                    Reproduce analyzed voice patterns across different content formats
+                </p>
+            </div>
+
+            <div class="step-indicator">
+                <div class="step">
+                    <div class="step-circle active">1</div>
+                    <div class="step-text active">Input</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-circle">2</div>
+                    <div class="step-text">Processing</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-circle">3</div>
+                    <div class="step-text">Results</div>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <form action="{{ url_for('workflow', mode='reproduction') }}" method="post" enctype="multipart/form-data">
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-lg font-medium text-white mb-4">Voice Characteristics</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="input_type" class="block text-sm font-medium text-gray-400 mb-1">Input Type</label>
+                                    <select id="input_type" name="input_type" class="select" onchange="toggleInputFields()">
+                                        <option value="analysis">Previous Analysis Results</option>
+                                        <option value="manual">Manual Voice Characteristics</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="analysis_input_section">
+                                    <label for="analysis_id" class="block text-sm font-medium text-gray-400 mb-1">Analysis ID</label>
+                                    <input type="text" id="analysis_id" name="analysis_id" class="input" placeholder="Enter the ID of your previous analysis">
+                                    <p class="mt-1 text-xs text-gray-500">If you don't have an analysis ID, switch to "Manual Voice Characteristics"</p>
+                                </div>
+                                
+                                <div id="manual_input_section" class="hidden">
+                                    <label for="voice_characteristics" class="block text-sm font-medium text-gray-400 mb-1">Voice Characteristics</label>
+                                    <textarea id="voice_characteristics" name="voice_characteristics" class="textarea" placeholder="Describe the voice characteristics in detail, including psychological traits, linguistic patterns, narrative style, etc."></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-white mb-4">Content Requirements</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="content_type" class="block text-sm font-medium text-gray-400 mb-1">Content Type</label>
+                                    <select id="content_type" name="content_type" class="select">
+                                        <option value="blog_post">Blog Post</option>
+                                        <option value="social_media">Social Media Post</option>
+                                        <option value="email">Email</option>
+                                        <option value="script">Script/Speech</option>
+                                        <option value="marketing">Marketing Copy</option>
+                                        <option value="website">Website Content</option>
+                                        <option value="other">Other (specify below)</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="other_content_type" class="hidden">
+                                    <label for="custom_content_type" class="block text-sm font-medium text-gray-400 mb-1">Custom Content Type</label>
+                                    <input type="text" id="custom_content_type" name="custom_content_type" class="input" placeholder="Specify content type">
+                                </div>
+                                
+                                <div>
+                                    <label for="content_topic" class="block text-sm font-medium text-gray-400 mb-1">Content Topic/Subject</label>
+                                    <input type="text" id="content_topic" name="content_topic" class="input" placeholder="What should the content be about?">
+                                </div>
+                                
+                                <div>
+                                    <label for="content_length" class="block text-sm font-medium text-gray-400 mb-1">Content Length</label>
+                                    <select id="content_length" name="content_length" class="select">
+                                        <option value="short">Short (100-300 words)</option>
+                                        <option value="medium" selected>Medium (300-800 words)</option>
+                                        <option value="long">Long (800-1500 words)</option>
+                                        <option value="very_long">Very Long (1500+ words)</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-white mb-4">Context Information</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="target_audience" class="block text-sm font-medium text-gray-400 mb-1">Target Audience</label>
+                                    <input type="text" id="target_audience" name="target_audience" class="input" placeholder="Who is the content intended for?">
+                                </div>
+                                
+                                <div>
+                                    <label for="communication_purpose" class="block text-sm font-medium text-gray-400 mb-1">Communication Purpose</label>
+                                    <select id="communication_purpose" name="communication_purpose" class="select">
+                                        <option value="inform">Inform/Educate</option>
+                                        <option value="persuade">Persuade/Convince</option>
+                                        <option value="entertain">Entertain</option>
+                                        <option value="inspire">Inspire/Motivate</option>
+                                        <option value="connect">Connect/Build Relationship</option>
+                                        <option value="sell">Sell/Promote</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="specific_requirements" class="block text-sm font-medium text-gray-400 mb-1">Specific Requirements (Optional)</label>
+                                    <textarea id="specific_requirements" name="specific_requirements" class="textarea" placeholder="Any specific requirements or constraints for the content"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex justify-end">
+                            <button type="submit" class="btn btn-primary px-6 py-2">
+                                Generate Content
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-6 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto flex flex-col items-center justify-between md:flex-row">
+            <div class="flex items-center">
+                <p class="text-sm text-gray-400">
+                    &copy; 2025 <a href="https://www.linkedin.com/in/arcui-usoara/" class="text-blue-400 hover:text-blue-300">Arcui Usoara</a>, 
+                    <a href="https://iaculus.com" class="text-blue-400 hover:text-blue-300">The House of Iaculus</a>
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <p class="text-sm text-gray-400">Resona Model - Voice Analysis & Creation System</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Toggle input fields based on selection
+        function toggleInputFields() {
+            const inputType = document.getElementById('input_type').value;
+            const analysisSection = document.getElementById('analysis_input_section');
+            const manualSection = document.getElementById('manual_input_section');
+            
+            if (inputType === 'analysis') {
+                analysisSection.classList.remove('hidden');
+                manualSection.classList.add('hidden');
+            } else if (inputType === 'manual') {
+                analysisSection.classList.add('hidden');
+                manualSection.classList.remove('hidden');
+            }
+        }
+
+        // Show/hide custom content type field
+        document.getElementById('content_type').addEventListener('change', function() {
+            const otherContentType = document.getElementById('other_content_type');
+            if (this.value === 'other') {
+                otherContentType.classList.remove('hidden');
+            } else {
+                otherContentType.classList.add('hidden');
+            }
+        });
+    </script>
+</body>
+</html>

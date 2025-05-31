@@ -1,0 +1,457 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incubation Results - Resona Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* ShadCN-inspired styles */
+        :root {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 224.3 76.3% 48%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .card {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background-color: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-circle.active {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-circle.completed {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background-color: hsl(var(--muted));
+            margin: 0 0.5rem;
+        }
+
+        .step-line.completed {
+            background-color: hsl(var(--primary));
+        }
+
+        .step-text {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            text-align: center;
+        }
+
+        .step-text.active {
+            color: hsl(var(--foreground));
+        }
+
+        .tab-group {
+            display: flex;
+            border-bottom: 1px solid hsl(var(--border));
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            color: hsl(var(--foreground));
+            border-bottom-color: hsl(var(--primary));
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            border-radius: 9999px;
+            padding: 0.25rem 0.75rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            line-height: 1;
+        }
+
+        .badge-blue {
+            background-color: rgba(59, 130, 246, 0.1);
+            color: rgb(59, 130, 246);
+        }
+
+        .badge-purple {
+            background-color: rgba(139, 92, 246, 0.1);
+            color: rgb(139, 92, 246);
+        }
+
+        .badge-green {
+            background-color: rgba(16, 185, 129, 0.1);
+            color: rgb(16, 185, 129);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="py-6 px-4 sm:px-6 lg:px-8 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{{ url_for('index') }}" class="text-2xl font-bold text-white">Resona Model</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-white">Voice Incubation Results</h2>
+                <p class="mt-2 text-gray-400">
+                    New voice created on {{ results.timestamp }}
+                </p>
+            </div>
+
+            <div class="step-indicator">
+                <div class="step">
+                    <div class="step-circle completed">1</div>
+                    <div class="step-text">Input</div>
+                </div>
+                <div class="step-line completed"></div>
+                <div class="step">
+                    <div class="step-circle completed">2</div>
+                    <div class="step-text">Processing</div>
+                </div>
+                <div class="step-line completed"></div>
+                <div class="step">
+                    <div class="step-circle active">3</div>
+                    <div class="step-text active">Results</div>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <div class="tab-group">
+                    <div class="tab active" onclick="showTab(0)">Voice Profile</div>
+                    <div class="tab" onclick="showTab(1)">Sample Content</div>
+                    <div class="tab" onclick="showTab(2)">Implementation</div>
+                    <div class="tab" onclick="showTab(3)">Export</div>
+                </div>
+
+                <div class="tab-content">
+                    <!-- Voice Profile Tab -->
+                    <div class="tab-pane active">
+                        <div class="prose prose-invert max-w-none">
+                            <h3 class="text-xl font-medium text-white mb-4">Voice Profile for {{ results.processed_data.entity_name }}</h3>
+                            
+                            <div class="bg-gray-800 rounded-lg p-4 mb-6">
+                                <p class="text-gray-300 mb-2"><strong>Entity Purpose:</strong> {{ results.processed_data.entity_purpose }}</p>
+                                <p class="text-gray-300 mb-2"><strong>Industry/Sector:</strong> {{ results.processed_data.industry_sector }}</p>
+                                <p class="text-gray-300"><strong>Target Audience:</strong> {{ results.processed_data.target_demographics }}</p>
+                            </div>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Core Characteristics</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <div class="flex flex-wrap gap-2 mb-4">
+                                            <span class="badge badge-blue">Primary: {{ results.processed_data.primary_archetype_p1 }}</span>
+                                            <span class="badge badge-purple">Secondary: {{ results.processed_data.secondary_archetype }}</span>
+                                        </div>
+                                        <ul class="list-disc pl-5 text-gray-300">
+                                            <li class="mb-1">Formality: {{ results.processed_data.formality_level }}</li>
+                                            <li class="mb-1">Complexity: {{ results.processed_data.complexity_level }}</li>
+                                            <li class="mb-1">Emotional Tone: {{ results.processed_data.primary_emotion }}</li>
+                                            <li class="mb-1">Authority Position: {{ results.processed_data.authority_position }}</li>
+                                            <li class="mb-1">Relationship Dynamic: {{ results.processed_data.relationship_dynamic }}</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Voice Values</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <p class="text-gray-300 mb-4">{{ results.results }}</p>
+                                        <p class="text-gray-300 text-sm italic">Based on stakeholder value alignment and prioritization</p>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="mb-6">
+                                <h4 class="text-lg font-medium text-white mb-2">Linguistic Style Guide</h4>
+                                <div class="bg-gray-800 rounded-lg p-4">
+                                    <ul class="list-disc pl-5 text-gray-300">
+                                        <li class="mb-1">Sentence Structure: {{ results.processed_data.sentence_structure }}</li>
+                                        <li class="mb-1">Technical Language: {{ results.processed_data.technical_language }}</li>
+                                        <li class="mb-1">Humor Approach: {{ results.processed_data.humor_approach }}</li>
+                                        <li class="mb-1">Metaphor Preferences: {{ results.processed_data.metaphor_preferences }}</li>
+                                        <li class="mb-1">Emotional Range: {{ results.processed_data.emotional_range }}</li>
+                                        <li class="mb-1">Emotional Intensity: {{ results.processed_data.emotional_intensity }}</li>
+                                    </ul>
+                                </div>
+                            </div>
+                            
+                            <div class="flex justify-end">
+                                <button onclick="showTab(1)" class="btn btn-primary px-4 py-2">
+                                    View Sample Content
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Sample Content Tab -->
+                    <div class="tab-pane hidden">
+                        <div class="prose prose-invert max-w-none">
+                            <h3 class="text-xl font-medium text-white mb-4">Sample Content</h3>
+                            
+                            <p class="text-gray-300 mb-6">Below are examples of content in the newly created voice across different formats.</p>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Website Copy</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <p class="text-gray-300">Sample website copy would appear here, demonstrating the new voice in a website context.</p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Social Media Post</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <p class="text-gray-300">Sample social media post would appear here, demonstrating the new voice in a social media context.</p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Email Communication</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <p class="text-gray-300">Sample email communication would appear here, demonstrating the new voice in an email context.</p>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Marketing Copy</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <p class="text-gray-300">Sample marketing copy would appear here, demonstrating the new voice in a marketing context.</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Implementation Tab -->
+                    <div class="tab-pane hidden">
+                        <div class="prose prose-invert max-w-none">
+                            <h3 class="text-xl font-medium text-white mb-4">Implementation Guidelines</h3>
+                            
+                            <p class="text-gray-300 mb-6">Follow these guidelines to implement the new voice consistently across different channels and content types.</p>
+                            
+                            <div class="space-y-6">
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Content Creation Process</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <ol class="list-decimal pl-5 text-gray-300">
+                                            <li class="mb-1">Review the voice profile and sample content</li>
+                                            <li class="mb-1">Consider the specific context and audience</li>
+                                            <li class="mb-1">Draft content following the linguistic style guide</li>
+                                            <li class="mb-1">Check against the voice consistency criteria</li>
+                                            <li class="mb-1">Refine based on feedback</li>
+                                        </ol>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Voice Consistency Criteria</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <ul class="list-disc pl-5 text-gray-300">
+                                            <li class="mb-1">Maintains core values and psychological positioning</li>
+                                            <li class="mb-1">Uses consistent linguistic patterns and sentence structures</li>
+                                            <li class="mb-1">Expresses emotions within the defined range and intensity</li>
+                                            <li class="mb-1">Maintains appropriate formality and complexity levels</li>
+                                            <li class="mb-1">Reflects the archetypal blend consistently</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                                
+                                <div>
+                                    <h4 class="text-lg font-medium text-white mb-2">Channel-Specific Adaptations</h4>
+                                    <div class="bg-gray-800 rounded-lg p-4">
+                                        <p class="text-gray-300 mb-2">While maintaining voice consistency, make these adaptations for different channels:</p>
+                                        <ul class="list-disc pl-5 text-gray-300">
+                                            <li class="mb-1"><strong>Social Media:</strong> More concise, slightly more casual</li>
+                                            <li class="mb-1"><strong>Website:</strong> Standard voice implementation</li>
+                                            <li class="mb-1"><strong>Email:</strong> Slightly more personal and direct</li>
+                                            <li class="mb-1"><strong>Formal Communications:</strong> Slightly more formal, less humor</li>
+                                            <li class="mb-1"><strong>Marketing:</strong> Slightly more emotional and persuasive</li>
+                                        </ul>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Export Tab -->
+                    <div class="tab-pane hidden">
+                        <div class="prose prose-invert max-w-none">
+                            <h3 class="text-xl font-medium text-white mb-4">Export Options</h3>
+                            
+                            <p class="text-gray-300 mb-6">Export your voice profile and guidelines in various formats for sharing with your team.</p>
+                            
+                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                <a href="{{ url_for('export', mode=results.mode, format='pdf') }}" class="block bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors">
+                                    <div class="flex flex-col items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-red-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0012.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" />
+                                        </svg>
+                                        <span class="text-white font-medium">PDF Format</span>
+                                        <span class="text-xs text-gray-400 mt-1">Complete voice guidelines</span>
+                                    </div>
+                                </a>
+                                
+                                <a href="{{ url_for('export', mode=results.mode, format='markdown') }}" class="block bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors">
+                                    <div class="flex flex-col items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-blue-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                                        </svg>
+                                        <span class="text-white font-medium">Markdown Format</span>
+                                        <span class="text-xs text-gray-400 mt-1">For digital documentation</span>
+                                    </div>
+                                </a>
+                                
+                                <a href="{{ url_for('export', mode=results.mode, format='json') }}" class="block bg-gray-800 rounded-lg p-4 hover:bg-gray-700 transition-colors">
+                                    <div class="flex flex-col items-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-green-500 mb-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 9l3 3-3 3m5 0h3M5 20h14a2 2 0 002-2V6a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                        </svg>
+                                        <span class="text-white font-medium">JSON Format</span>
+                                        <span class="text-xs text-gray-400 mt-1">For technical integration</span>
+                                    </div>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-8 flex justify-between">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary px-4 py-2">
+                    Return to Home
+                </a>
+                
+                <a href="{{ url_for('workflow', mode=results.mode) }}" class="btn btn-primary px-4 py-2">
+                    Create New Voice
+                </a>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-6 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto flex flex-col items-center justify-between md:flex-row">
+            <div class="flex items-center">
+                <p class="text-sm text-gray-400">
+                    &copy; 2025 <a href="https://www.linkedin.com/in/arcui-usoara/" class="text-blue-400 hover:text-blue-300">Arcui Usoara</a>, 
+                    <a href="https://iaculus.com" class="text-blue-400 hover:text-blue-300">The House of Iaculus</a>
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <p class="text-sm text-gray-400">Resona Model - Voice Analysis & Creation System</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentTab = 0;
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        function showTab(index) {
+            // Hide all tab panes
+            tabPanes.forEach(pane => pane.classList.add('hidden'));
+            
+            // Remove active class from all tabs
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show the selected tab pane
+            tabPanes[index].classList.remove('hidden');
+            
+            // Add active class to the selected tab
+            tabs[index].classList.add('active');
+            
+            currentTab = index;
+        }
+    </script>
+</body>
+</html>

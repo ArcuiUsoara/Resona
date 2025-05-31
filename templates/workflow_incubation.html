@@ -1,0 +1,694 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Incubation Workflow - Resona Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* ShadCN-inspired styles */
+        :root {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 224.3 76.3% 48%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .card {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .input {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .textarea {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            min-height: 100px;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .select {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background-color: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-circle.active {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-circle.completed {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background-color: hsl(var(--muted));
+            margin: 0 0.5rem;
+        }
+
+        .step-line.completed {
+            background-color: hsl(var(--primary));
+        }
+
+        .step-text {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            text-align: center;
+        }
+
+        .step-text.active {
+            color: hsl(var(--foreground));
+        }
+
+        .tab-group {
+            display: flex;
+            border-bottom: 1px solid hsl(var(--border));
+            margin-bottom: 1.5rem;
+        }
+
+        .tab {
+            padding: 0.75rem 1rem;
+            font-weight: 500;
+            color: hsl(var(--muted-foreground));
+            border-bottom: 2px solid transparent;
+            cursor: pointer;
+        }
+
+        .tab.active {
+            color: hsl(var(--foreground));
+            border-bottom-color: hsl(var(--primary));
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="py-6 px-4 sm:px-6 lg:px-8 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{{ url_for('index') }}" class="text-2xl font-bold text-white">Resona Model</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-white">Voice Incubation Workflow</h2>
+                <p class="mt-2 text-gray-400">
+                    Create a new, distinctive voice for your entity or brand
+                </p>
+            </div>
+
+            <div class="step-indicator">
+                <div class="step">
+                    <div class="step-circle active">1</div>
+                    <div class="step-text active">Input</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-circle">2</div>
+                    <div class="step-text">Processing</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-circle">3</div>
+                    <div class="step-text">Results</div>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <form action="{{ url_for('workflow', mode='incubation') }}" method="post" enctype="multipart/form-data">
+                    <div class="tab-group">
+                        <div class="tab active" onclick="showTab(0)">Entity Foundation</div>
+                        <div class="tab" onclick="showTab(1)">Stakeholder Values</div>
+                        <div class="tab" onclick="showTab(2)">Psychological Positioning</div>
+                        <div class="tab" onclick="showTab(3)">Archetypes</div>
+                        <div class="tab" onclick="showTab(4)">Linguistic Style</div>
+                        <div class="tab" onclick="showTab(5)">Emotional Expression</div>
+                    </div>
+
+                    <div class="tab-content">
+                        <!-- Tab 1: Entity Foundation -->
+                        <div class="tab-pane active">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="entity_name" class="block text-sm font-medium text-gray-400 mb-1">Entity Name</label>
+                                    <input type="text" id="entity_name" name="entity_name" class="input" placeholder="Official name of brand/entity" required>
+                                </div>
+                                
+                                <div>
+                                    <label for="entity_purpose" class="block text-sm font-medium text-gray-400 mb-1">Entity Purpose</label>
+                                    <textarea id="entity_purpose" name="entity_purpose" class="textarea" placeholder="Core mission and purpose of the entity" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="industry_sector" class="block text-sm font-medium text-gray-400 mb-1">Industry/Sector</label>
+                                    <input type="text" id="industry_sector" name="industry_sector" class="input" placeholder="Industry classification" required>
+                                </div>
+                                
+                                <div>
+                                    <label for="target_demographics" class="block text-sm font-medium text-gray-400 mb-1">Target Audience Demographics</label>
+                                    <textarea id="target_demographics" name="target_demographics" class="textarea" placeholder="Primary audience characteristics (age, gender, location, etc.)" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="target_psychographics" class="block text-sm font-medium text-gray-400 mb-1">Target Audience Psychographics</label>
+                                    <textarea id="target_psychographics" name="target_psychographics" class="textarea" placeholder="Audience values, aspirations, and pain points" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="competitive_landscape" class="block text-sm font-medium text-gray-400 mb-1">Competitive Landscape</label>
+                                    <textarea id="competitive_landscape" name="competitive_landscape" class="textarea" placeholder="Key competitors and their positioning" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-end">
+                                <button type="button" class="btn btn-primary px-4 py-2" onclick="nextTab()">Next</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 2: Stakeholder Values -->
+                        <div class="tab-pane hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="core_values_p1" class="block text-sm font-medium text-gray-400 mb-1">Core Values (Participant 1)</label>
+                                    <textarea id="core_values_p1" name="core_values_p1" class="textarea" placeholder="3-5 core values with brief explanations" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="core_values_p2" class="block text-sm font-medium text-gray-400 mb-1">Core Values (Participant 2)</label>
+                                    <textarea id="core_values_p2" name="core_values_p2" class="textarea" placeholder="3-5 core values with brief explanations"></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="core_values_p3" class="block text-sm font-medium text-gray-400 mb-1">Core Values (Participant 3)</label>
+                                    <textarea id="core_values_p3" name="core_values_p3" class="textarea" placeholder="3-5 core values with brief explanations"></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="value_prioritization" class="block text-sm font-medium text-gray-400 mb-1">Value Prioritization</label>
+                                    <textarea id="value_prioritization" name="value_prioritization" class="textarea" placeholder="Collective ranking of values by importance" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="value_expression" class="block text-sm font-medium text-gray-400 mb-1">Value Expression Preferences</label>
+                                    <textarea id="value_expression" name="value_expression" class="textarea" placeholder="How values should be communicated" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="value_conflicts" class="block text-sm font-medium text-gray-400 mb-1">Value Conflicts Resolution</label>
+                                    <textarea id="value_conflicts" name="value_conflicts" class="textarea" placeholder="Approach to resolving value tensions" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-between">
+                                <button type="button" class="btn btn-secondary px-4 py-2" onclick="prevTab()">Previous</button>
+                                <button type="button" class="btn btn-primary px-4 py-2" onclick="nextTab()">Next</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 3: Psychological Positioning -->
+                        <div class="tab-pane hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="psychological_impact" class="block text-sm font-medium text-gray-400 mb-1">Desired Psychological Impact</label>
+                                    <textarea id="psychological_impact" name="psychological_impact" class="textarea" placeholder="Emotional response sought from audience" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="authority_position" class="block text-sm font-medium text-gray-400 mb-1">Authority Position</label>
+                                    <select id="authority_position" name="authority_position" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="expert">Expert/Authority</option>
+                                        <option value="peer">Peer/Equal</option>
+                                        <option value="guide">Guide/Mentor</option>
+                                        <option value="servant">Servant/Helper</option>
+                                        <option value="innovator">Innovator/Disruptor</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="relationship_dynamic" class="block text-sm font-medium text-gray-400 mb-1">Relationship Dynamic</label>
+                                    <select id="relationship_dynamic" name="relationship_dynamic" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="collaborative">Collaborative</option>
+                                        <option value="mentoring">Mentoring</option>
+                                        <option value="inspirational">Inspirational</option>
+                                        <option value="transactional">Transactional</option>
+                                        <option value="nurturing">Nurturing</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="trust_building" class="block text-sm font-medium text-gray-400 mb-1">Trust-Building Approach</label>
+                                    <textarea id="trust_building" name="trust_building" class="textarea" placeholder="Preferred trust establishment methods" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="psychological_distance" class="block text-sm font-medium text-gray-400 mb-1">Psychological Distance</label>
+                                    <select id="psychological_distance" name="psychological_distance" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="intimate">Intimate (Very Close)</option>
+                                        <option value="personal">Personal (Friendly)</option>
+                                        <option value="social">Social (Professional)</option>
+                                        <option value="public">Public (Formal)</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="vulnerability_level" class="block text-sm font-medium text-gray-400 mb-1">Vulnerability Level</label>
+                                    <select id="vulnerability_level" name="vulnerability_level" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="high">High (Very Open)</option>
+                                        <option value="moderate">Moderate (Selective Openness)</option>
+                                        <option value="low">Low (Reserved)</option>
+                                        <option value="minimal">Minimal (Highly Protected)</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-between">
+                                <button type="button" class="btn btn-secondary px-4 py-2" onclick="prevTab()">Previous</button>
+                                <button type="button" class="btn btn-primary px-4 py-2" onclick="nextTab()">Next</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 4: Archetypes -->
+                        <div class="tab-pane hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="primary_archetype_p1" class="block text-sm font-medium text-gray-400 mb-1">Primary Archetype (Participant 1)</label>
+                                    <select id="primary_archetype_p1" name="primary_archetype_p1" class="select" required>
+                                        <option value="">Select an archetype</option>
+                                        <option value="innocent">The Innocent</option>
+                                        <option value="sage">The Sage</option>
+                                        <option value="explorer">The Explorer</option>
+                                        <option value="ruler">The Ruler</option>
+                                        <option value="creator">The Creator</option>
+                                        <option value="caregiver">The Caregiver</option>
+                                        <option value="magician">The Magician</option>
+                                        <option value="hero">The Hero</option>
+                                        <option value="outlaw">The Outlaw</option>
+                                        <option value="lover">The Lover</option>
+                                        <option value="jester">The Jester</option>
+                                        <option value="everyman">The Everyman</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="primary_archetype_p2" class="block text-sm font-medium text-gray-400 mb-1">Primary Archetype (Participant 2)</label>
+                                    <select id="primary_archetype_p2" name="primary_archetype_p2" class="select">
+                                        <option value="">Select an archetype</option>
+                                        <option value="innocent">The Innocent</option>
+                                        <option value="sage">The Sage</option>
+                                        <option value="explorer">The Explorer</option>
+                                        <option value="ruler">The Ruler</option>
+                                        <option value="creator">The Creator</option>
+                                        <option value="caregiver">The Caregiver</option>
+                                        <option value="magician">The Magician</option>
+                                        <option value="hero">The Hero</option>
+                                        <option value="outlaw">The Outlaw</option>
+                                        <option value="lover">The Lover</option>
+                                        <option value="jester">The Jester</option>
+                                        <option value="everyman">The Everyman</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="primary_archetype_p3" class="block text-sm font-medium text-gray-400 mb-1">Primary Archetype (Participant 3)</label>
+                                    <select id="primary_archetype_p3" name="primary_archetype_p3" class="select">
+                                        <option value="">Select an archetype</option>
+                                        <option value="innocent">The Innocent</option>
+                                        <option value="sage">The Sage</option>
+                                        <option value="explorer">The Explorer</option>
+                                        <option value="ruler">The Ruler</option>
+                                        <option value="creator">The Creator</option>
+                                        <option value="caregiver">The Caregiver</option>
+                                        <option value="magician">The Magician</option>
+                                        <option value="hero">The Hero</option>
+                                        <option value="outlaw">The Outlaw</option>
+                                        <option value="lover">The Lover</option>
+                                        <option value="jester">The Jester</option>
+                                        <option value="everyman">The Everyman</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="secondary_archetype" class="block text-sm font-medium text-gray-400 mb-1">Secondary Archetype</label>
+                                    <select id="secondary_archetype" name="secondary_archetype" class="select" required>
+                                        <option value="">Select an archetype</option>
+                                        <option value="innocent">The Innocent</option>
+                                        <option value="sage">The Sage</option>
+                                        <option value="explorer">The Explorer</option>
+                                        <option value="ruler">The Ruler</option>
+                                        <option value="creator">The Creator</option>
+                                        <option value="caregiver">The Caregiver</option>
+                                        <option value="magician">The Magician</option>
+                                        <option value="hero">The Hero</option>
+                                        <option value="outlaw">The Outlaw</option>
+                                        <option value="lover">The Lover</option>
+                                        <option value="jester">The Jester</option>
+                                        <option value="everyman">The Everyman</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="archetype_blend" class="block text-sm font-medium text-gray-400 mb-1">Archetypal Blend Rationale</label>
+                                    <textarea id="archetype_blend" name="archetype_blend" class="textarea" placeholder="Reasoning behind archetype selection" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="anti_archetypes" class="block text-sm font-medium text-gray-400 mb-1">Anti-Archetypes</label>
+                                    <textarea id="anti_archetypes" name="anti_archetypes" class="textarea" placeholder="Archetypes to explicitly avoid" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-between">
+                                <button type="button" class="btn btn-secondary px-4 py-2" onclick="prevTab()">Previous</button>
+                                <button type="button" class="btn btn-primary px-4 py-2" onclick="nextTab()">Next</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 5: Linguistic Style -->
+                        <div class="tab-pane hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="formality_level" class="block text-sm font-medium text-gray-400 mb-1">Formality Level</label>
+                                    <select id="formality_level" name="formality_level" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_formal">Very Formal</option>
+                                        <option value="formal">Formal</option>
+                                        <option value="neutral">Neutral</option>
+                                        <option value="casual">Casual</option>
+                                        <option value="very_casual">Very Casual</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="complexity_level" class="block text-sm font-medium text-gray-400 mb-1">Complexity Level</label>
+                                    <select id="complexity_level" name="complexity_level" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_simple">Very Simple</option>
+                                        <option value="simple">Simple</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="complex">Complex</option>
+                                        <option value="very_complex">Very Complex</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="technical_language" class="block text-sm font-medium text-gray-400 mb-1">Technical Language Usage</label>
+                                    <select id="technical_language" name="technical_language" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="none">None</option>
+                                        <option value="minimal">Minimal</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="frequent">Frequent</option>
+                                        <option value="highly_technical">Highly Technical</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="humor_approach" class="block text-sm font-medium text-gray-400 mb-1">Humor Approach</label>
+                                    <select id="humor_approach" name="humor_approach" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="none">None</option>
+                                        <option value="subtle">Subtle</option>
+                                        <option value="occasional">Occasional</option>
+                                        <option value="frequent">Frequent</option>
+                                        <option value="central">Central to Voice</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="metaphor_preferences" class="block text-sm font-medium text-gray-400 mb-1">Metaphor Preferences</label>
+                                    <textarea id="metaphor_preferences" name="metaphor_preferences" class="textarea" placeholder="Metaphorical domains to utilize or avoid" required></textarea>
+                                </div>
+                                
+                                <div>
+                                    <label for="sentence_structure" class="block text-sm font-medium text-gray-400 mb-1">Sentence Structure</label>
+                                    <select id="sentence_structure" name="sentence_structure" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_short">Very Short</option>
+                                        <option value="short">Short</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="long">Long</option>
+                                        <option value="varied">Highly Varied</option>
+                                    </select>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-between">
+                                <button type="button" class="btn btn-secondary px-4 py-2" onclick="prevTab()">Previous</button>
+                                <button type="button" class="btn btn-primary px-4 py-2" onclick="nextTab()">Next</button>
+                            </div>
+                        </div>
+                        
+                        <!-- Tab 6: Emotional Expression -->
+                        <div class="tab-pane hidden">
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="primary_emotion" class="block text-sm font-medium text-gray-400 mb-1">Primary Emotional Tone</label>
+                                    <select id="primary_emotion" name="primary_emotion" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="optimistic">Optimistic</option>
+                                        <option value="confident">Confident</option>
+                                        <option value="empathetic">Empathetic</option>
+                                        <option value="passionate">Passionate</option>
+                                        <option value="calm">Calm</option>
+                                        <option value="serious">Serious</option>
+                                        <option value="playful">Playful</option>
+                                        <option value="authoritative">Authoritative</option>
+                                        <option value="curious">Curious</option>
+                                        <option value="nurturing">Nurturing</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="emotional_range" class="block text-sm font-medium text-gray-400 mb-1">Emotional Range</label>
+                                    <select id="emotional_range" name="emotional_range" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_narrow">Very Narrow</option>
+                                        <option value="narrow">Narrow</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="wide">Wide</option>
+                                        <option value="very_wide">Very Wide</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="emotional_intensity" class="block text-sm font-medium text-gray-400 mb-1">Emotional Intensity</label>
+                                    <select id="emotional_intensity" name="emotional_intensity" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_subdued">Very Subdued</option>
+                                        <option value="subdued">Subdued</option>
+                                        <option value="moderate">Moderate</option>
+                                        <option value="intense">Intense</option>
+                                        <option value="very_intense">Very Intense</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="emotional_valence" class="block text-sm font-medium text-gray-400 mb-1">Emotional Valence</label>
+                                    <select id="emotional_valence" name="emotional_valence" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_positive">Very Positive</option>
+                                        <option value="positive">Positive</option>
+                                        <option value="neutral">Neutral</option>
+                                        <option value="negative">Negative</option>
+                                        <option value="very_negative">Very Negative</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="emotional_authenticity" class="block text-sm font-medium text-gray-400 mb-1">Emotional Authenticity</label>
+                                    <select id="emotional_authenticity" name="emotional_authenticity" class="select" required>
+                                        <option value="">Select an option</option>
+                                        <option value="very_raw">Very Raw/Unfiltered</option>
+                                        <option value="authentic">Authentic but Measured</option>
+                                        <option value="balanced">Balanced</option>
+                                        <option value="curated">Carefully Curated</option>
+                                        <option value="highly_curated">Highly Curated/Polished</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="emotional_triggers" class="block text-sm font-medium text-gray-400 mb-1">Emotional Triggers to Emphasize</label>
+                                    <textarea id="emotional_triggers" name="emotional_triggers" class="textarea" placeholder="Specific emotions to evoke in audience" required></textarea>
+                                </div>
+                            </div>
+                            
+                            <div class="mt-6 flex justify-between">
+                                <button type="button" class="btn btn-secondary px-4 py-2" onclick="prevTab()">Previous</button>
+                                <button type="submit" class="btn btn-primary px-6 py-2">Create Voice</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-6 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto flex flex-col items-center justify-between md:flex-row">
+            <div class="flex items-center">
+                <p class="text-sm text-gray-400">
+                    &copy; 2025 <a href="https://www.linkedin.com/in/arcui-usoara/" class="text-blue-400 hover:text-blue-300">Arcui Usoara</a>, 
+                    <a href="https://iaculus.com" class="text-blue-400 hover:text-blue-300">The House of Iaculus</a>
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <p class="text-sm text-gray-400">Resona Model - Voice Analysis & Creation System</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        let currentTab = 0;
+        const tabs = document.querySelectorAll('.tab');
+        const tabPanes = document.querySelectorAll('.tab-pane');
+        
+        function showTab(index) {
+            // Hide all tab panes
+            tabPanes.forEach(pane => pane.classList.add('hidden'));
+            
+            // Remove active class from all tabs
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show the selected tab pane
+            tabPanes[index].classList.remove('hidden');
+            
+            // Add active class to the selected tab
+            tabs[index].classList.add('active');
+            
+            currentTab = index;
+        }
+        
+        function nextTab() {
+            if (currentTab < tabPanes.length - 1) {
+                showTab(currentTab + 1);
+            }
+        }
+        
+        function prevTab() {
+            if (currentTab > 0) {
+                showTab(currentTab - 1);
+            }
+        }
+    </script>
+</body>
+</html>

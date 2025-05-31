@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis Workflow - Resona Model</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <style>
+        /* ShadCN-inspired styles */
+        :root {
+            --background: 240 10% 3.9%;
+            --foreground: 0 0% 98%;
+            --card: 240 10% 3.9%;
+            --card-foreground: 0 0% 98%;
+            --popover: 240 10% 3.9%;
+            --popover-foreground: 0 0% 98%;
+            --primary: 217.2 91.2% 59.8%;
+            --primary-foreground: 222.2 47.4% 11.2%;
+            --secondary: 217.2 32.6% 17.5%;
+            --secondary-foreground: 210 40% 98%;
+            --muted: 217.2 32.6% 17.5%;
+            --muted-foreground: 215 20.2% 65.1%;
+            --accent: 217.2 32.6% 17.5%;
+            --accent-foreground: 210 40% 98%;
+            --destructive: 0 62.8% 30.6%;
+            --destructive-foreground: 210 40% 98%;
+            --border: 217.2 32.6% 17.5%;
+            --input: 217.2 32.6% 17.5%;
+            --ring: 224.3 76.3% 48%;
+        }
+
+        body {
+            background-color: hsl(var(--background));
+            color: hsl(var(--foreground));
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+
+        .card {
+            background-color: hsl(var(--card));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.5rem;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+        }
+
+        .btn {
+            border-radius: 0.375rem;
+            font-weight: 500;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+        }
+
+        .btn-secondary {
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+        }
+
+        .btn-secondary:hover {
+            opacity: 0.9;
+        }
+
+        .input {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+        }
+
+        .input:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .textarea {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            min-height: 100px;
+        }
+
+        .textarea:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .select {
+            background-color: hsl(var(--input));
+            border: 1px solid hsl(var(--border));
+            border-radius: 0.375rem;
+            color: hsl(var(--foreground));
+            padding: 0.5rem 0.75rem;
+            width: 100%;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 20 20'%3e%3cpath stroke='%236b7280' stroke-linecap='round' stroke-linejoin='round' stroke-width='1.5' d='M6 8l4 4 4-4'/%3e%3c/svg%3e");
+            background-position: right 0.5rem center;
+            background-repeat: no-repeat;
+            background-size: 1.5em 1.5em;
+        }
+
+        .select:focus {
+            outline: none;
+            border-color: hsl(var(--ring));
+            box-shadow: 0 0 0 2px hsla(var(--ring), 0.3);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            background-color: hsl(var(--secondary));
+            color: hsl(var(--secondary-foreground));
+            border-radius: 0.375rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .file-label:hover {
+            opacity: 0.9;
+        }
+
+        .step-indicator {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 2rem;
+        }
+
+        .step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            flex: 1;
+        }
+
+        .step-circle {
+            width: 2rem;
+            height: 2rem;
+            border-radius: 9999px;
+            background-color: hsl(var(--muted));
+            color: hsl(var(--muted-foreground));
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        .step-circle.active {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-circle.completed {
+            background-color: hsl(var(--primary));
+            color: hsl(var(--primary-foreground));
+        }
+
+        .step-line {
+            flex: 1;
+            height: 2px;
+            background-color: hsl(var(--muted));
+            margin: 0 0.5rem;
+        }
+
+        .step-line.completed {
+            background-color: hsl(var(--primary));
+        }
+
+        .step-text {
+            font-size: 0.875rem;
+            color: hsl(var(--muted-foreground));
+            text-align: center;
+        }
+
+        .step-text.active {
+            color: hsl(var(--foreground));
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <header class="py-6 px-4 sm:px-6 lg:px-8 border-b border-gray-800">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div class="flex items-center">
+                <a href="{{ url_for('index') }}" class="text-2xl font-bold text-white">Resona Model</a>
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow py-12 px-4 sm:px-6 lg:px-8">
+        <div class="max-w-4xl mx-auto">
+            <div class="text-center mb-8">
+                <h2 class="text-2xl font-bold text-white">Master Analysis Workflow</h2>
+                <p class="mt-2 text-gray-400">
+                    Provide content for deep psychological and linguistic analysis
+                </p>
+            </div>
+
+            <div class="step-indicator">
+                <div class="step">
+                    <div class="step-circle active">1</div>
+                    <div class="step-text active">Input</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-circle">2</div>
+                    <div class="step-text">Processing</div>
+                </div>
+                <div class="step-line"></div>
+                <div class="step">
+                    <div class="step-circle">3</div>
+                    <div class="step-text">Results</div>
+                </div>
+            </div>
+
+            <div class="card p-8">
+                <form action="{{ url_for('workflow', mode='analysis') }}" method="post" enctype="multipart/form-data">
+                    <div class="space-y-8">
+                        <div>
+                            <h3 class="text-lg font-medium text-white mb-4">Content Input</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="input_type" class="block text-sm font-medium text-gray-400 mb-1">Input Type</label>
+                                    <select id="input_type" name="input_type" class="select" onchange="toggleInputFields()">
+                                        <option value="text">Text Transcript</option>
+                                        <option value="audio">Audio File</option>
+                                        <option value="both">Both Text and Audio</option>
+                                    </select>
+                                </div>
+                                
+                                <div id="text_input_section">
+                                    <label for="text_content" class="block text-sm font-medium text-gray-400 mb-1">Text Content</label>
+                                    <textarea id="text_content" name="text_content" class="textarea" placeholder="Enter or paste text transcript here (minimum 300 words recommended for best results)"></textarea>
+                                </div>
+                                
+                                <div id="audio_input_section" class="hidden">
+                                    <label for="audio_file" class="block text-sm font-medium text-gray-400 mb-1">Audio File</label>
+                                    <div class="flex items-center space-x-2">
+                                        <label for="audio_file" class="file-label">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                                            </svg>
+                                            Choose Audio File
+                                        </label>
+                                        <span id="file_name" class="text-sm text-gray-400">No file chosen</span>
+                                    </div>
+                                    <input type="file" id="audio_file" name="audio_file" class="file-input" accept="audio/*">
+                                    <p class="mt-1 text-xs text-gray-500">Supported formats: MP3, WAV, M4A (5+ minutes recommended for best results)</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-white mb-4">Context Information</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="communication_setting" class="block text-sm font-medium text-gray-400 mb-1">Communication Setting</label>
+                                    <input type="text" id="communication_setting" name="communication_setting" class="input" placeholder="e.g., Professional presentation, casual conversation, written blog post">
+                                </div>
+                                
+                                <div>
+                                    <label for="background_info" class="block text-sm font-medium text-gray-400 mb-1">Background Information (Optional)</label>
+                                    <textarea id="background_info" name="background_info" class="textarea" placeholder="Any relevant background about the speaker/writer or context"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div>
+                            <h3 class="text-lg font-medium text-white mb-4">Analysis Objectives</h3>
+                            <div class="space-y-4">
+                                <div>
+                                    <label for="analysis_focus" class="block text-sm font-medium text-gray-400 mb-1">Analysis Focus (Optional)</label>
+                                    <select id="analysis_focus" name="analysis_focus" class="select">
+                                        <option value="comprehensive">Comprehensive Analysis (All Aspects)</option>
+                                        <option value="psychological">Psychological Foundation</option>
+                                        <option value="dialogical">Dialogical Self</option>
+                                        <option value="narrative">Narrative Identity</option>
+                                        <option value="linguistic">Linguistic Patterns</option>
+                                        <option value="formative">Formative Experiences</option>
+                                        <option value="values">Core Values & Philosophy</option>
+                                        <option value="emotional">Emotional Signature</option>
+                                    </select>
+                                </div>
+                                
+                                <div>
+                                    <label for="specific_questions" class="block text-sm font-medium text-gray-400 mb-1">Specific Questions (Optional)</label>
+                                    <textarea id="specific_questions" name="specific_questions" class="textarea" placeholder="Any specific questions you'd like the analysis to address"></textarea>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="pt-4 flex justify-end">
+                            <button type="submit" class="btn btn-primary px-6 py-2">
+                                Begin Analysis
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="py-6 px-4 sm:px-6 lg:px-8 border-t border-gray-800">
+        <div class="max-w-7xl mx-auto flex flex-col items-center justify-between md:flex-row">
+            <div class="flex items-center">
+                <p class="text-sm text-gray-400">
+                    &copy; 2025 <a href="https://www.linkedin.com/in/arcui-usoara/" class="text-blue-400 hover:text-blue-300">Arcui Usoara</a>, 
+                    <a href="https://iaculus.com" class="text-blue-400 hover:text-blue-300">The House of Iaculus</a>
+                </p>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <p class="text-sm text-gray-400">Resona Model - Voice Analysis & Creation System</p>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        // Handle file input display
+        document.getElementById('audio_file').addEventListener('change', function(e) {
+            const fileName = e.target.files[0] ? e.target.files[0].name : 'No file chosen';
+            document.getElementById('file_name').textContent = fileName;
+        });
+
+        // Toggle input fields based on selection
+        function toggleInputFields() {
+            const inputType = document.getElementById('input_type').value;
+            const textSection = document.getElementById('text_input_section');
+            const audioSection = document.getElementById('audio_input_section');
+            
+            if (inputType === 'text') {
+                textSection.classList.remove('hidden');
+                audioSection.classList.add('hidden');
+            } else if (inputType === 'audio') {
+                textSection.classList.add('hidden');
+                audioSection.classList.remove('hidden');
+            } else if (inputType === 'both') {
+                textSection.classList.remove('hidden');
+                audioSection.classList.remove('hidden');
+            }
+        }
+    </script>
+</body>
+</html>
